@@ -1,0 +1,53 @@
+name: Deploy Next.js with Docs
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Checkout the external Next.js repo as main
+    - name: Checkout Next.js project
+      uses: actions/checkout@v4
+      with:
+        repository: lugen4ro/adr-explorer
+        path: ./
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: pnpm install
+
+    # Configure Next.js for static export if not already configured
+    - name: Configure Next.js for GitHub Pages
+      run: |
+        if [ ! -f next.config.js ]; then
+          echo "/** @type {import('next').NextConfig} */
+          const nextConfig = {
+            output: 'export',
+            trailingSlash: true,
+            images: {
+              unoptimized: true
+            },
+            basePath: process.env.NODE_ENV === 'production' ? '/your-repo-name' : ''
+          }
+          module.exports = nextConfig" > next.config.js
+        fi
+        
+    - name: Build Next.js application
+      run: pnpm run build
+
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: './out'  # or './dist' depending on Next.js config
+        
+    - name: Deploy to GitHub Pages
+      uses: actions/deploy-pages@v4
