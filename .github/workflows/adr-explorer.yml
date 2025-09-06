@@ -4,8 +4,12 @@ on:
   push:
     branches: [main]
     paths: ["docs/adr/**"] # Only trigger on ADR changes
-
   workflow_dispatch: # Enables manual triggering
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write # ← This is what's missing
 
 jobs:
   build-and-deploy:
@@ -34,6 +38,8 @@ jobs:
         run: pnpm install
 
       - name: Build Next.js application
+        env:
+          GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }} # ← This extracts the repo name
         run: pnpm run build
 
       - name: Upload artifact
